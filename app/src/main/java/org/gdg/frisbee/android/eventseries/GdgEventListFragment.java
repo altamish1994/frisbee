@@ -16,7 +16,7 @@ import org.joda.time.DateTime;
 import java.util.ArrayList;
 
 import retrofit.Callback;
-import retrofit.RetrofitError;
+import retrofit.Response;
 
 public class GdgEventListFragment extends EventListFragment {
 
@@ -45,10 +45,10 @@ public class GdgEventListFragment extends EventListFragment {
 
 
         if (Utils.isOnline(getActivity())) {
-            App.getInstance().getGroupDirectory().getChapterEventList(mStart, mEnd, plusId, new Callback<ArrayList<Event>>() {
+            App.getInstance().getGroupDirectory().getChapterEventList(mStart, mEnd, plusId).enqueue(new Callback<ArrayList<Event>>() {
                 @Override
-                public void success(ArrayList<Event> events, retrofit.client.Response response) {
-                    splitEventsAndAddToAdapter(events);
+                public void onResponse(Response<ArrayList<Event>> response) {
+                    splitEventsAndAddToAdapter(response.body());
                     App.getInstance().getModelCache().putAsync(cacheKey, mEvents, DateTime.now().plusHours(2), new ModelCache.CachePutListener() {
                         @Override
                         public void onPutIntoCache() {
@@ -59,8 +59,8 @@ public class GdgEventListFragment extends EventListFragment {
                 }
 
                 @Override
-                public void failure(RetrofitError error) {
-                    onError(error);
+                public void onFailure(Throwable t) {
+                    onError(t);
                 }
             });
         } else {

@@ -28,13 +28,13 @@ import android.widget.ViewSwitcher;
 
 import org.gdg.frisbee.android.Const;
 import org.gdg.frisbee.android.R;
-import org.gdg.frisbee.android.chapter.ChapterAdapter;
 import org.gdg.frisbee.android.api.model.Chapter;
 import org.gdg.frisbee.android.api.model.Directory;
 import org.gdg.frisbee.android.app.App;
 import org.gdg.frisbee.android.cache.ModelCache;
-import org.gdg.frisbee.android.common.BaseFragment;
+import org.gdg.frisbee.android.chapter.ChapterAdapter;
 import org.gdg.frisbee.android.chapter.ChapterComparator;
+import org.gdg.frisbee.android.common.BaseFragment;
 import org.gdg.frisbee.android.utils.PrefUtils;
 import org.gdg.frisbee.android.view.ColoredSnackBar;
 import org.joda.time.DateTime;
@@ -42,11 +42,10 @@ import org.joda.time.DateTime;
 import java.util.Collections;
 import java.util.List;
 
-import butterknife.ButterKnife;
 import butterknife.Bind;
+import butterknife.ButterKnife;
 import retrofit.Callback;
-import retrofit.RetrofitError;
-import retrofit.client.Response;
+import retrofit.Response;
 import timber.log.Timber;
 
 public class FirstStartStep1Fragment extends BaseFragment {
@@ -114,10 +113,11 @@ public class FirstStartStep1Fragment extends BaseFragment {
     
     private void fetchChapters() {
 
-        App.getInstance().getGdgXHub().getDirectory(new Callback<Directory>() {
-
+        App.getInstance().getGdgXHub().getDirectory().enqueue(new Callback<Directory>() {
             @Override
-            public void success(final Directory directory, Response response) {
+            public void onResponse(Response<Directory> response) {
+
+                final Directory directory = response.body();
 
                 addChapters(directory.getGroups());
                 mLoadSwitcher.setDisplayedChild(1);
@@ -128,7 +128,7 @@ public class FirstStartStep1Fragment extends BaseFragment {
             }
 
             @Override
-            public void failure(RetrofitError error) {
+            public void onFailure(Throwable t) {
                 try {
                     Snackbar snackbar = Snackbar.make(getView(), R.string.fetch_chapters_failed,
                             Snackbar.LENGTH_INDEFINITE);
@@ -142,7 +142,7 @@ public class FirstStartStep1Fragment extends BaseFragment {
                 } catch (IllegalStateException exception) {
                     Toast.makeText(getActivity(), R.string.fetch_chapters_failed, Toast.LENGTH_SHORT).show();
                 }
-                Timber.e(error, "Could'nt fetch chapter list");
+                Timber.e(t, "Could'nt fetch chapter list");
             }
         });
     }

@@ -40,7 +40,7 @@ import java.util.Map;
 
 import butterknife.ButterKnife;
 import retrofit.Callback;
-import retrofit.RetrofitError;
+import retrofit.Response;
 import timber.log.Timber;
 
 public class PulseFragment extends GdgListFragment {
@@ -105,9 +105,10 @@ public class PulseFragment extends GdgListFragment {
 
     private void fetchPulseTask() {
         if (mTarget.equals(GLOBAL)) {
-            App.getInstance().getGroupDirectory().getPulse(new Callback<Pulse>() {
+            App.getInstance().getGroupDirectory().getPulse().enqueue(new Callback<Pulse>() {
                 @Override
-                public void success(final Pulse pulse, retrofit.client.Response response) {
+                public void onResponse(Response<Pulse> response) {
+                    final Pulse pulse = response.body();
                     App.getInstance().getModelCache().putAsync(
                             Const.CACHE_KEY_PULSE + mTarget.toLowerCase(),
                             pulse,
@@ -121,19 +122,20 @@ public class PulseFragment extends GdgListFragment {
                 }
 
                 @Override
-                public void failure(RetrofitError error) {
+                public void onFailure(Throwable t) {
                     if (isAdded()) {
                         Snackbar snackbar = Snackbar.make(getView(), R.string.fetch_chapters_failed,
                                 Snackbar.LENGTH_SHORT);
                         ColoredSnackBar.alert(snackbar).show();
                     }
-                    Timber.e(error, "Couldn't fetch pulse");
+                    Timber.e(t, "Couldn't fetch pulse");
                 }
             });
         } else {
-            App.getInstance().getGroupDirectory().getCountryPulse(mTarget, new Callback<Pulse>() {
+            App.getInstance().getGroupDirectory().getCountryPulse(mTarget).enqueue(new Callback<Pulse>() {
                 @Override
-                public void success(final Pulse pulse, retrofit.client.Response response) {
+                public void onResponse(Response<Pulse> response) {
+                    final Pulse pulse = response.body();
                     App.getInstance().getModelCache().putAsync(
                             Const.CACHE_KEY_PULSE + mTarget.toLowerCase().replace(" ", "-"),
                             pulse,
@@ -147,13 +149,13 @@ public class PulseFragment extends GdgListFragment {
                 }
 
                 @Override
-                public void failure(RetrofitError error) {
+                public void onFailure(Throwable t) {
                     if (isAdded()) {
                         Snackbar snackbar = Snackbar.make(getView(), R.string.fetch_chapters_failed,
                                 Snackbar.LENGTH_SHORT);
                         ColoredSnackBar.alert(snackbar).show();
                     }
-                    Timber.e(error, "Couldn't fetch pulse");
+                    Timber.e(t, "Couldn't fetch pulse");
                 }
             });
         }

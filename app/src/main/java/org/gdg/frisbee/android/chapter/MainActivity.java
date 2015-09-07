@@ -60,7 +60,7 @@ import java.util.List;
 
 import butterknife.Bind;
 import retrofit.Callback;
-import retrofit.RetrofitError;
+import retrofit.Response;
 import timber.log.Timber;
 
 public class MainActivity extends GdgNavDrawerActivity {
@@ -234,9 +234,14 @@ public class MainActivity extends GdgNavDrawerActivity {
     }
 
     private void fetchChapters() {
-        App.getInstance().getGdgXHub().getDirectory(new Callback<Directory>() {
+        App.getInstance().getGdgXHub().getDirectory().enqueue(new Callback<Directory>() {
+            @Override
+            public void onResponse(Response<Directory> response) {
+                final Directory directory = response.body();
 
-            public void success(final Directory directory, retrofit.client.Response response) {
+                ArrayList<Chapter> chapters = directory.getGroups();
+                initChapters(chapters);
+
                 App.getInstance().getModelCache().putAsync(
                         Const.CACHE_KEY_CHAPTER_LIST_HUB,
                         directory,
@@ -244,20 +249,19 @@ public class MainActivity extends GdgNavDrawerActivity {
                         new ModelCache.CachePutListener() {
                             @Override
                             public void onPutIntoCache() {
-                                ArrayList<Chapter> chapters = directory.getGroups();
-                                initChapters(chapters);
                             }
                         });
             }
 
-            public void failure(RetrofitError error) {
+            @Override
+            public void onFailure(Throwable t) {
                 try {
                     Snackbar snackbar = Snackbar.make(mContentFrameLayout, getString(R.string.fetch_chapters_failed),
                             Snackbar.LENGTH_SHORT);
                     ColoredSnackBar.alert(snackbar).show();
-                } catch (IllegalStateException exception) {
+                } catch (IllegalStateException ignored) {
                 }
-                Timber.e(error, "Couldn't fetch chapter list");
+                Timber.e(t, "Couldn't fetch chapter list");
             }
         });
     }
