@@ -41,6 +41,7 @@ import com.google.android.gms.common.GooglePlayServicesUtil;
 
 import org.gdg.frisbee.android.Const;
 import org.gdg.frisbee.android.R;
+import org.gdg.frisbee.android.api.Callback;
 import org.gdg.frisbee.android.api.model.Chapter;
 import org.gdg.frisbee.android.api.model.Directory;
 import org.gdg.frisbee.android.app.App;
@@ -59,8 +60,6 @@ import java.util.Collections;
 import java.util.List;
 
 import butterknife.Bind;
-import retrofit.Callback;
-import retrofit.Response;
 import timber.log.Timber;
 
 public class MainActivity extends GdgNavDrawerActivity {
@@ -236,9 +235,7 @@ public class MainActivity extends GdgNavDrawerActivity {
     private void fetchChapters() {
         App.getInstance().getGdgXHub().getDirectory().enqueue(new Callback<Directory>() {
             @Override
-            public void onResponse(Response<Directory> response) {
-                final Directory directory = response.body();
-
+            public void onSuccessResponse(Directory directory) {
                 ArrayList<Chapter> chapters = directory.getGroups();
                 initChapters(chapters);
 
@@ -254,14 +251,16 @@ public class MainActivity extends GdgNavDrawerActivity {
             }
 
             @Override
-            public void onFailure(Throwable t) {
+            public void onFailure(Throwable t, int errorMessage) {
                 try {
-                    Snackbar snackbar = Snackbar.make(mContentFrameLayout, getString(R.string.fetch_chapters_failed),
+                    if (errorMessage != R.string.offline_alert) {
+                        errorMessage = R.string.fetch_chapters_failed;
+                    }
+                    Snackbar snackbar = Snackbar.make(mContentFrameLayout, errorMessage,
                             Snackbar.LENGTH_SHORT);
                     ColoredSnackBar.alert(snackbar).show();
                 } catch (IllegalStateException ignored) {
                 }
-                Timber.e(t, "Couldn't fetch chapter list");
             }
         });
     }

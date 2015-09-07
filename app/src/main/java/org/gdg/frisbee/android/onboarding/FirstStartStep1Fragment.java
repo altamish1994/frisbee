@@ -28,6 +28,7 @@ import android.widget.ViewSwitcher;
 
 import org.gdg.frisbee.android.Const;
 import org.gdg.frisbee.android.R;
+import org.gdg.frisbee.android.api.Callback;
 import org.gdg.frisbee.android.api.model.Chapter;
 import org.gdg.frisbee.android.api.model.Directory;
 import org.gdg.frisbee.android.app.App;
@@ -44,9 +45,6 @@ import java.util.List;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
-import retrofit.Callback;
-import retrofit.Response;
-import timber.log.Timber;
 
 public class FirstStartStep1Fragment extends BaseFragment {
 
@@ -115,9 +113,7 @@ public class FirstStartStep1Fragment extends BaseFragment {
 
         App.getInstance().getGdgXHub().getDirectory().enqueue(new Callback<Directory>() {
             @Override
-            public void onResponse(Response<Directory> response) {
-
-                final Directory directory = response.body();
+            public void onSuccessResponse(Directory directory) {
 
                 addChapters(directory.getGroups());
                 mLoadSwitcher.setDisplayedChild(1);
@@ -128,9 +124,12 @@ public class FirstStartStep1Fragment extends BaseFragment {
             }
 
             @Override
-            public void onFailure(Throwable t) {
+            public void onFailure(Throwable t, int errorMessage) {
                 try {
-                    Snackbar snackbar = Snackbar.make(getView(), R.string.fetch_chapters_failed,
+                    if (errorMessage != R.string.offline_alert) {
+                        errorMessage = R.string.fetch_chapters_failed;
+                    }
+                    Snackbar snackbar = Snackbar.make(getView(), errorMessage,
                             Snackbar.LENGTH_INDEFINITE);
                     snackbar.setAction("Retry", new View.OnClickListener() {
                         @Override
@@ -142,7 +141,6 @@ public class FirstStartStep1Fragment extends BaseFragment {
                 } catch (IllegalStateException exception) {
                     Toast.makeText(getActivity(), R.string.fetch_chapters_failed, Toast.LENGTH_SHORT).show();
                 }
-                Timber.e(t, "Could'nt fetch chapter list");
             }
         });
     }

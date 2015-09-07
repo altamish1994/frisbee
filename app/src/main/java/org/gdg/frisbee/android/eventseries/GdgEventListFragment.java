@@ -5,8 +5,8 @@ import android.support.design.widget.Snackbar;
 
 import org.gdg.frisbee.android.Const;
 import org.gdg.frisbee.android.R;
+import org.gdg.frisbee.android.api.Callback;
 import org.gdg.frisbee.android.api.model.Event;
-import org.gdg.frisbee.android.api.model.SimpleEvent;
 import org.gdg.frisbee.android.app.App;
 import org.gdg.frisbee.android.cache.ModelCache;
 import org.gdg.frisbee.android.utils.Utils;
@@ -14,9 +14,6 @@ import org.gdg.frisbee.android.view.ColoredSnackBar;
 import org.joda.time.DateTime;
 
 import java.util.ArrayList;
-
-import retrofit.Callback;
-import retrofit.Response;
 
 public class GdgEventListFragment extends EventListFragment {
 
@@ -47,8 +44,8 @@ public class GdgEventListFragment extends EventListFragment {
         if (Utils.isOnline(getActivity())) {
             App.getInstance().getGroupDirectory().getChapterEventList(mStart, mEnd, plusId).enqueue(new Callback<ArrayList<Event>>() {
                 @Override
-                public void onResponse(Response<ArrayList<Event>> response) {
-                    splitEventsAndAddToAdapter(response.body());
+                public void onSuccessResponse(ArrayList<Event> events) {
+                    splitEventsAndAddToAdapter(events);
                     App.getInstance().getModelCache().putAsync(cacheKey, mEvents, DateTime.now().plusHours(2), new ModelCache.CachePutListener() {
                         @Override
                         public void onPutIntoCache() {
@@ -59,8 +56,8 @@ public class GdgEventListFragment extends EventListFragment {
                 }
 
                 @Override
-                public void onFailure(Throwable t) {
-                    onError(t);
+                public void onFailure(Throwable t, int errorMessage) {
+                    onError(errorMessage);
                 }
             });
         } else {
@@ -88,21 +85,13 @@ public class GdgEventListFragment extends EventListFragment {
 
                 private void onNotFound() {
                     setIsLoading(false);
-                    Snackbar snackbar = Snackbar.make(getView(), R.string.offline_alert,
-                            Snackbar.LENGTH_SHORT);
-                    ColoredSnackBar.alert(snackbar).show();
+                    if (isAdded()) {
+                        Snackbar snackbar = Snackbar.make(getView(), R.string.offline_alert,
+                                Snackbar.LENGTH_SHORT);
+                        ColoredSnackBar.alert(snackbar).show();
+                    }
                 }
             });
         }
-    }
-
-    private boolean checkValidCache(Object item) {
-        if (item instanceof ArrayList) {
-            ArrayList<?> result = (ArrayList) item;
-            if (result.size() > 0) {
-                return result.get(0) instanceof SimpleEvent;
-            }
-        }
-        return false;
     }
 }
